@@ -13,6 +13,8 @@ import {
   ScrollResult,
 } from './scroll';
 
+export * from './scroll';
+
 type ScrollerEventTarget = Window | Element;
 export type ScrollYDirection = 'top' | 'bottom';
 export type ScrollXDirection = 'left' | 'right';
@@ -98,7 +100,7 @@ export interface ScrollerObserver {
 }
 
 export type ScrollerObservableKeys = keyof ScrollerObserver;
-export const scrollerObservableKeys: ScrollerObservableKeys[] = [
+const scrollerObservableKeys: ScrollerObservableKeys[] = [
   'state',
   'isPending',
   'isReady',
@@ -133,6 +135,9 @@ interface ScrollerScrolls {
 interface Scroller extends ScrollerScrolls {}
 
 class Scroller extends DDEvent<ScrollerEventMap> implements ScrollerScrolls {
+  static readonly scrollerObservableKeys = scrollerObservableKeys;
+  static readonly States = ScrollerState;
+
   scrollStartJudgePx = DEFAULT_SCROLL_START_JUDGE_PX;
   scrollingJudgeInterval = DEFAULT_SCROLLING_JUDGE_INTERVAL;
   baseAxis: ScrollAxis = DEFAULT_BASE_AXIS;
@@ -683,7 +688,7 @@ class Scroller extends DDEvent<ScrollerEventMap> implements ScrollerScrolls {
 }
 
 interface PrototypeMap {
-  key: keyof ScrollerScrolls,
+  key: keyof ScrollerScrolls;
   i: number;
   f: Function;
 }

@@ -74,7 +74,7 @@ const abortEvents: HTMLElementEventMapKey[] = [
   'touchmove',
 ];
 
-export default function scrollBy(
+export default function scroll(
   diffX: number,
   diffY: number,
   options: ScrollOptions = {},

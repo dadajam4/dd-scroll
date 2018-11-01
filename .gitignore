@@ -4,6 +4,7 @@
 npm-debug.log
 .DS_Store
 *.tmp
+.rpt2_cache
 
 #########################
 # private files

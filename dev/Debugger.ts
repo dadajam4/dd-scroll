@@ -1,5 +1,4 @@
 import Scroller, {
-  scrollerObservableKeys,
   ScrollerObserver,
   ScrollerState,
   ScrollAxis,
@@ -44,7 +43,7 @@ export default class Debugger implements ScrollerObserver {
     const tbody = document.createElement('tbody');
     this.el.appendChild(table);
     table.appendChild(tbody);
-    for (const key of scrollerObservableKeys) {
+    for (const key of Scroller.scrollerObservableKeys) {
       const row = document.createElement('tr');
       const th = document.createElement('tr');
       th.innerText = key;
