@@ -1,6 +1,6 @@
 import './polyfills';
 import DDEvent from 'dd-event';
-import { HAS_WINDOW, loadWindow, error } from './util';
+import { HAS_WINDOW, error } from './util';
 import {
   scrollBy,
   scrollTo,
@@ -15,11 +15,18 @@ import {
 
 export * from './scroll';
 
+// Scroller は設定されたコンテキスト要素に応じてscrollやsize検知のリスナを
+// window か 自身のelementに切り替えます
 type ScrollerEventTarget = Window | Element;
 export type ScrollYDirection = 'top' | 'bottom';
 export type ScrollXDirection = 'left' | 'right';
 export type ScrollDirection = ScrollYDirection | ScrollXDirection;
 
+/**
+ * スクロールの方向を示します。
+ * xは水平方向、
+ * yは垂直方向をそれぞれ示します
+ */
 export type ScrollAxis = 'x' | 'y';
 
 export interface ScrollerSetting {
@@ -78,6 +85,11 @@ const DEFAULT_SCROLL_START_JUDGE_PX = 0;
 const DEFAULT_SCROLLING_JUDGE_INTERVAL = 500;
 const DEFAULT_BASE_AXIS: ScrollAxis = 'y';
 
+/**
+ * Scrollerクラスの状態を監視＆同期するオブジェクトが
+ * 保有すべきプロパティ一覧です。
+ * 個々のプロパティ名は、同名のScrollerクラスのプロパティを参照して下さい
+ */
 export interface ScrollerObserver {
   state: ScrollerState;
   isPending: boolean;
@@ -266,13 +278,21 @@ class Scroller extends DDEvent<ScrollerEventMap> implements ScrollerScrolls {
   private _scrollToResult: ScrollResult | null = null;
   private _observers: ScrollerObserver[] = [];
 
-  constructor(setting: Partial<ScrollerSetting> | Element | string = {}) {
+  /**
+   * Scrollerインスタンスを作成します。
+   * コンテキストとなるElementをこの時点で指定するか否かは任意です。
+   *
+   * @param settingOrElementOrQueryString 任意です。[[ScrollerSetting]]か Elementを直接指定します。この時点でElementを指定しない場合は、[[setElement]]を実行するまでインスタンスは動作しません。
+   */
+  constructor(
+    settingOrElementOrQueryString: Partial<ScrollerSetting> | Element | string = {},
+  ) {
     super();
 
     const convertedSetting: Partial<ScrollerSetting> =
-      typeof setting === 'string' || (HAS_WINDOW && setting instanceof Element)
-        ? (setting = { el: <Element | string>setting })
-        : (setting as Partial<ScrollerSetting>);
+      typeof settingOrElementOrQueryString === 'string' || (HAS_WINDOW && settingOrElementOrQueryString instanceof Element)
+        ? (settingOrElementOrQueryString = { el: <Element | string>settingOrElementOrQueryString })
+        : (settingOrElementOrQueryString as Partial<ScrollerSetting>);
 
     if (convertedSetting.scrollStartJudgePx !== undefined)
       this.scrollStartJudgePx = convertedSetting.scrollStartJudgePx;
@@ -396,7 +416,6 @@ class Scroller extends DDEvent<ScrollerEventMap> implements ScrollerScrolls {
   }
 
   private async _setup(): Promise<void> {
-    await loadWindow();
     this._update();
     this._setState(ScrollerState.Ready);
     this.start();
