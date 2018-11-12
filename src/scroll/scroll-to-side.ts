@@ -48,7 +48,9 @@ function scrollToSide(
 
   if (sides.includes('top')) {
     position.y = 0;
-  } else if (sides.includes('left')) {
+  }
+
+  if (sides.includes('left')) {
     position.x = 0;
   }
 

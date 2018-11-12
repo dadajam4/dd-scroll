@@ -1,6 +1,13 @@
 import './polyfills';
 import DDEvent from 'dd-event';
-import { HAS_WINDOW, error } from './util';
+import {
+  HAS_WINDOW,
+  isDocumentElement,
+  isBodyElement,
+  enableScroll,
+  disableScroll,
+  error,
+} from './util';
 import {
   ScrollPosition,
   ScrollOptions,
@@ -243,10 +250,13 @@ export interface ScrollerObserver {
   isReady: boolean;
   isRunning: boolean;
   isDestroyed: boolean;
+  scrollEnabled: boolean;
   containerWidth: number;
   containerHeight: number;
   scrollWidth: number;
   scrollHeight: number;
+  scrollableX: boolean;
+  scrollableY: boolean;
   scrollTop: number;
   scrollLeft: number;
   scrollRight: number;
@@ -269,10 +279,13 @@ const scrollerObservableKeys: ScrollerObservableKeys[] = [
   'isReady',
   'isRunning',
   'isDestroyed',
+  'scrollEnabled',
   'containerWidth',
   'containerHeight',
   'scrollWidth',
   'scrollHeight',
+  'scrollableX',
+  'scrollableY',
   'scrollTop',
   'scrollLeft',
   'scrollRight',
@@ -283,6 +296,11 @@ const scrollerObservableKeys: ScrollerObservableKeys[] = [
   'lastXDirection',
   'nowScrolling',
 ];
+
+/**
+ * スクロールを停止させるためのソースオブジェクト
+ */
+export type ScrollStopper = number | string | Object | Symbol;
 
 /**
  * 任意のElement（or HTML Document）のスクロールやサイズ変更を監視し、その情報を通知するクラスです。<br>
@@ -373,6 +391,13 @@ class Scroller extends DDEvent<ScrollerEventMap> {
   }
 
   /**
+   * スクロールの有効状態を取得します
+   */
+  get scrollEnabled(): boolean {
+    return this._scrollStoppers.length === 0;
+  }
+
+  /**
    * スクロール要素の幅を示します。
    */
   get containerWidth(): number {
@@ -398,6 +423,20 @@ class Scroller extends DDEvent<ScrollerEventMap> {
    */
   get scrollHeight(): number {
     return this._scrollHeight;
+  }
+
+  /**
+   * x軸にスクロール可能な場合trueを示します
+   */
+  get scrollableX(): boolean {
+    return this._scrollWidth > this._containerWidth;
+  }
+
+  /**
+   * y軸にスクロール可能な場合trueを示します
+   */
+  get scrollableY(): boolean {
+    return this._scrollHeight > this._containerHeight;
   }
 
   /**
@@ -548,6 +587,7 @@ class Scroller extends DDEvent<ScrollerEventMap> {
   private _resizeObserver?: ResizeObserver;
   private _scrollToResult: ScrollResult | null = null;
   private _observers: ScrollerObserver[] = [];
+  private _scrollStoppers: ScrollStopper[] = [];
 
   /**
    * Scrollerインスタンスを作成します。
@@ -606,8 +646,8 @@ class Scroller extends DDEvent<ScrollerEventMap> {
     if (!_el) throw error('missing scrolling element ' + el);
 
     this._el = _el;
-    this._isDocumentElement = this._el.constructor === HTMLHtmlElement;
-    this._isBodyElement = this._el.constructor === HTMLBodyElement;
+    this._isDocumentElement = isDocumentElement(_el);
+    this._isBodyElement = isBodyElement(_el);
     this._isRootElement = this._isDocumentElement || this._isBodyElement;
     this._eventTarget =
       this._isDocumentElement || this._isBodyElement ? window : this._el;
@@ -661,6 +701,8 @@ class Scroller extends DDEvent<ScrollerEventMap> {
     this.stop();
     this.cancel();
     this._readyResolvers = [];
+    this._scrollStoppers = [];
+    this._scrollEnable();
     this._observers = [];
 
     delete this._el;
@@ -897,7 +939,42 @@ class Scroller extends DDEvent<ScrollerEventMap> {
     );
   }
 
+  /**
+   * スクロールの停止を要求します。
+   * @param stopper
+   */
+  pushScrollStopper(stopper: ScrollStopper) {
+    if (!this._scrollStoppers.includes(stopper)) {
+      this._scrollStoppers.push(stopper);
+      if (this._scrollStoppers.length === 1) {
+        this._updateScrollable();
+        this._syncToObservers(['scrollEnabled']);
+      }
+    }
+    return () => {
+      this.removeScrollStopper(stopper);
+    };
+  }
+
+  /**
+   * スクロールの停止要求を解除します。<br>
+   * 別のプロセスにより異なる[[ScrollStopper]]が登録されている場合、
+   * スクロールは再開されない事に注意してください。
+   * @param stopper
+   */
+  removeScrollStopper(stopper: ScrollStopper) {
+    const index = this._scrollStoppers.indexOf(stopper);
+    if (index !== -1) {
+      this._scrollStoppers.splice(index, 1);
+      if (this._scrollStoppers.length === 0) {
+        this._updateScrollable();
+        this._syncToObservers(['scrollEnabled']);
+      }
+    }
+  }
+
   private async _setup(): Promise<void> {
+    this._updateScrollable();
     this._update();
     this._setState(ScrollerState.Ready);
     this.start();
@@ -944,7 +1021,12 @@ class Scroller extends DDEvent<ScrollerEventMap> {
     this._containerWidth = width;
     this._containerHeight = height;
     if (width !== _containerWidth || height !== _containerHeight) {
-      this._syncToObservers(['containerWidth', 'containerHeight']);
+      this._syncToObservers([
+        'containerWidth',
+        'containerHeight',
+        'scrollableX',
+        'scrollableY',
+      ]);
       this.emit('resize', { width, height });
     }
   }
@@ -957,7 +1039,12 @@ class Scroller extends DDEvent<ScrollerEventMap> {
       _scrollWidth !== this._scrollWidth ||
       _scrollHeight !== this._scrollHeight
     ) {
-      this._syncToObservers(['scrollWidth', 'scrollHeight']);
+      this._syncToObservers([
+        'scrollWidth',
+        'scrollHeight',
+        'scrollableX',
+        'scrollableY',
+      ]);
     }
   }
 
@@ -1058,6 +1145,12 @@ class Scroller extends DDEvent<ScrollerEventMap> {
   }
 
   private _onScroll() {
+    if (!this.scrollEnabled) {
+      this._el.scrollLeft = this._scrollLeft;
+      this._el.scrollTop = this._scrollTop;
+      return;
+    }
+
     // remenber before values
     const {
       _scrollTop,
@@ -1163,11 +1256,6 @@ class Scroller extends DDEvent<ScrollerEventMap> {
     }, this.scrollingJudgeInterval);
   }
 
-  // private _clearScrollToResult() {
-  //   if (!this._scrollToResult) return;
-  //   this._scrollToResult = null;
-  // }
-
   private _syncToObserver(
     observer: ScrollerObserver,
     keys: ScrollerObservableKeys[] = scrollerObservableKeys,
@@ -1220,6 +1308,22 @@ class Scroller extends DDEvent<ScrollerEventMap> {
       this._clearScrollToResult();
     });
     return result;
+  }
+
+  private _updateScrollable() {
+    if (this.scrollEnabled) {
+      this._scrollEnable();
+    } else {
+      this._scrollDisable();
+    }
+  }
+  private _scrollEnable() {
+    enableScroll(this._el);
+  }
+
+  private _scrollDisable() {
+    this.cancel();
+    disableScroll(this._el);
   }
 }
 

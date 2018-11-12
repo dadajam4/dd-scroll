@@ -36,7 +36,9 @@ bottoms.forEach(bottom => {
 
 const $inner = document.getElementById('inner') as Element;
 const innerScroller = new Scroller('#innerScroller');
-new Debugger(innerScroller, $inner, { position: 'absolute' });
+new Debugger(innerScroller, $inner, {
+  position: 'absolute',
+});
 
 const innerAnchors = Array.from(
   document.querySelectorAll('.inner-anchor-test'),
@@ -45,7 +47,7 @@ innerAnchors.forEach(anchor => {
   anchor.addEventListener('click', e => {
     e.preventDefault();
     const hash = anchor.getAttribute('href') as string;
-    innerScroller.toElement(hash, { x: true });
+    innerScroller.toElement(hash, { x: true, y: true });
   });
 });
 
@@ -53,7 +55,7 @@ const innerTops = Array.from(document.querySelectorAll('.inner-top-test'));
 innerTops.forEach(top => {
   top.addEventListener('click', e => {
     e.preventDefault();
-    innerScroller.toTop();
+    innerScroller.toLeftTop();
   });
 });
 
@@ -63,6 +65,6 @@ const innerBottoms = Array.from(
 innerBottoms.forEach(bottom => {
   bottom.addEventListener('click', e => {
     e.preventDefault();
-    innerScroller.toBottom();
+    innerScroller.toRightBottom();
   });
 });

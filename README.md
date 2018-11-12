@@ -1,9 +1,16 @@
 # dd-scroller
 
+本モジュールは大きく2つの機能を提供します。
+
+- Scrollerクラス  
 DOM要素（DocumentElement含む）のスクロール情報を検知したり、スムーススクロールさせるためのクラスモジュールです。  
 ブラウザJS、Node.jsの両環境でユニバーサルに動作します。（Node.js上では処理がキャンセルされます）  
 そのためSPAサービス等にそのまま組み込んで利用する事が可能です。  
 また、TypeScriptの型情報を併せ持つため、TypeScriptプロジェクトにおいて型情報を利用したコーディングが可能です。
+
+- スムーススクロール系メソッド
+root要素（document.scrollingElement）、もしくは任意のElementにおいてスムーススクロールさせるためのメソッドです。  
+これら全てのメソッドはScrollerクラスに含まれていますが、「スクロールだけを行えれば良い」場合こちらを直接利用します。
 
 [docs](https://dadajam4.github.io/dd-scroller/classes/_scroller_.scroller.html)
 
@@ -15,7 +22,7 @@ npm install dd-scroller --save
 ```
 
 ## Polyfill
-本モジュールは[ResizeObserver](https://wicg.github.io/ResizeObserver/)を利用します。未対応ブラウザにおいては[resize-observer-polyfill](https://www.npmjs.com/package/resize-observer-polyfill)の利用をお勧めします。
+Scrollerクラスにおいて自身のスクロール領域のリサイズを検知するために[ResizeObserver](https://wicg.github.io/ResizeObserver/)を利用します。（※スムーススクロール系メソッドでは必要ありません）未対応ブラウザにおいては[resize-observer-polyfill](https://www.npmjs.com/package/resize-observer-polyfill)の利用をお勧めします。
 
 ### JavaScript
 ```JavaScript
@@ -33,7 +40,7 @@ if (typeof window !== 'undefined' && !(window as any).ResizeObserver) {
 }
 ```
 
-## 使い方
+## Scrollerクラスの使い方
 
 ### ducument.scrollingElementにシンプルに適用
 ```JavaScript
@@ -85,4 +92,32 @@ SomeVueComponent = Vue.extend({
     delete this._scroller;
   },
 });
+```
+
+## スムーススクロール系メソッドの使い方
+
+```JavaScript
+
+// 必要に応じてメソッドをimportします
+import {
+  scrollBy,
+  scrollTo,
+  scrollToElement,
+  scrollToSide,
+  scrollToTop,
+  scrollToRight,
+  scrollToBottom,
+  scrollToLeft,
+  scrollToLeftTop,
+  scrollToLeftBottom,
+  scrollToRightTop,
+  scrollToRightBottom,
+} from 'dd-scroller';
+
+const result = scrollToElement('#some-element');
+result.promise.then(() => {
+  
+  // >>> スクロール完了後の処理,,,
+});
+
 ```

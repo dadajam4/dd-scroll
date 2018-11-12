@@ -63,12 +63,19 @@
 		<div class="col-8 col-content">
 			<div class="tsd-panel tsd-typography">
 				<h1 id="dd-scroller">dd-scroller</h1>
-				<p>DOM要素（DocumentElement含む）のスクロール情報を検知したり、スムーススクロールさせるためのクラスモジュールです。<br>ブラウザJS、Node.jsの両環境でユニバーサルに動作します。（Node.js上では処理がキャンセルされます）<br>そのためSPAサービス等にそのまま組み込んで利用する事が可能です。<br>また、TypeScriptの型情報を併せ持つため、TypeScriptプロジェクトにおいて型情報を利用したコーディングが可能です。</p>
+				<p>本モジュールは大きく2つの機能を提供します。</p>
+				<ul>
+					<li><p>Scrollerクラス<br>DOM要素（DocumentElement含む）のスクロール情報を検知したり、スムーススクロールさせるためのクラスモジュールです。<br>ブラウザJS、Node.jsの両環境でユニバーサルに動作します。（Node.js上では処理がキャンセルされます）<br>そのためSPAサービス等にそのまま組み込んで利用する事が可能です。<br>また、TypeScriptの型情報を併せ持つため、TypeScriptプロジェクトにおいて型情報を利用したコーディングが可能です。</p>
+					</li>
+					<li><p>スムーススクロール系メソッド
+						root要素（document.scrollingElement）、もしくは任意のElementにおいてスムーススクロールさせるためのメソッドです。<br>これら全てのメソッドはScrollerクラスに含まれていますが、「スクロールだけを行えれば良い」場合こちらを直接利用します。</p>
+					</li>
+				</ul>
 				<p><a href="https://dadajam4.github.io/dd-scroller/classes/_scroller_.scroller.html">docs</a></p>
 				<p><a href="https://dadajam4.github.io/dd-scroller/playground/">See the demo</a></p>
 				<h2 id="-">インストール</h2>
 				<pre><code>npm <span class="hljs-keyword">install </span>dd-<span class="hljs-keyword">scroller </span>--save</code></pre><h2 id="polyfill">Polyfill</h2>
-				<p>本モジュールは<a href="https://wicg.github.io/ResizeObserver/">ResizeObserver</a>を利用します。未対応ブラウザにおいては<a href="https://www.npmjs.com/package/resize-observer-polyfill">resize-observer-polyfill</a>の利用をお勧めします。</p>
+				<p>Scrollerクラスにおいて自身のスクロール領域のリサイズを検知するために<a href="https://wicg.github.io/ResizeObserver/">ResizeObserver</a>を利用します。（※スムーススクロール系メソッドでは必要ありません）未対応ブラウザにおいては<a href="https://www.npmjs.com/package/resize-observer-polyfill">resize-observer-polyfill</a>の利用をお勧めします。</p>
 				<h3 id="javascript">JavaScript</h3>
 				<pre><code class="language-JavaScript"><span class="hljs-keyword">import</span> ResizeObserver <span class="hljs-keyword">from</span> <span class="hljs-string">'resize-observer-polyfill'</span>;
 <span class="hljs-keyword">if</span> (<span class="hljs-keyword">typeof</span> <span class="hljs-built_in">window</span> !== <span class="hljs-string">'undefined'</span> &amp;&amp; !<span class="hljs-built_in">window</span>.ResizeObserver) {
@@ -79,7 +86,7 @@
 <span class="hljs-keyword">if</span> (<span class="hljs-keyword">typeof</span> <span class="hljs-built_in">window</span> !== <span class="hljs-string">'undefined'</span> &amp;&amp; !(<span class="hljs-built_in">window</span> <span class="hljs-keyword">as</span> <span class="hljs-built_in">any</span>).ResizeObserver) {
   (<span class="hljs-built_in">window</span> <span class="hljs-keyword">as</span> <span class="hljs-built_in">any</span>).ResizeObserver = ResizeObserver;
 }</code></pre>
-				<h2 id="-">使い方</h2>
+				<h2 id="scroller-">Scrollerクラスの使い方</h2>
 				<h3 id="ducument-scrollingelement-">ducument.scrollingElementにシンプルに適用</h3>
 				<pre><code class="language-JavaScript"><span class="hljs-keyword">import</span> Scroller <span class="hljs-keyword">from</span> <span class="hljs-string">'dd-scroller'</span>;
 
@@ -125,6 +132,30 @@ scroller.on(<span class="hljs-string">'scrollEnd'</span>, e =&gt; {
     <span class="hljs-keyword">delete</span> <span class="hljs-keyword">this</span>._scroller;
   },
 });</code></pre>
+				<h2 id="-">スムーススクロール系メソッドの使い方</h2>
+				<pre><code class="language-JavaScript">
+<span class="hljs-comment">// 必要に応じてメソッドをimportします</span>
+<span class="hljs-keyword">import</span> {
+  scrollBy,
+  scrollTo,
+  scrollToElement,
+  scrollToSide,
+  scrollToTop,
+  scrollToRight,
+  scrollToBottom,
+  scrollToLeft,
+  scrollToLeftTop,
+  scrollToLeftBottom,
+  scrollToRightTop,
+  scrollToRightBottom,
+} <span class="hljs-keyword">from</span> <span class="hljs-string">'dd-scroller'</span>;
+
+<span class="hljs-keyword">const</span> result = scrollToElement(<span class="hljs-string">'#some-element'</span>);
+result.promise.then(<span class="hljs-function"><span class="hljs-params">()</span> =&gt;</span> {
+
+  <span class="hljs-comment">// &gt;&gt;&gt; スクロール完了後の処理,,,</span>
+});
+</code></pre>
 			</div>
 		</div>
 		<div class="col-4 col-menu menu-sticky-wrap menu-highlight">

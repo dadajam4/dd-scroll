@@ -8,6 +8,7 @@ import {
   HTMLElementEventMapKey,
   error,
 } from './util';
+import { NO_SCROLL_ATTRIBUTE } from '../util';
 
 /**
  * スクロール系メソッドの基本オプション設定です。
@@ -226,7 +227,11 @@ export default function scroll(
   //
   // processes
   //
-  if (!diffY && !diffX) return initialAbort();
+  if (
+    (diffY === 0 && diffX === 0) ||
+    $container.getAttribute(NO_SCROLL_ATTRIBUTE) !== null
+  )
+    return initialAbort();
 
   // setup easings
   let easingValues: EasingValues;

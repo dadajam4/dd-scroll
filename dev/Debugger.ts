@@ -15,10 +15,13 @@ export default class Debugger implements ScrollerObserver {
   isReady!: boolean;
   isRunning!: boolean;
   isDestroyed!: boolean;
+  scrollEnabled!: boolean;
   containerWidth!: number;
   containerHeight!: number;
   scrollWidth!: number;
   scrollHeight!: number;
+  scrollableX!: boolean;
+  scrollableY!: boolean;
   scrollTop!: number;
   scrollRight!: number;
   scrollBottom!: number;
@@ -60,16 +63,35 @@ export default class Debugger implements ScrollerObserver {
         set: (val: any) => {
           self['_' + key] = val;
           td.innerText = val;
+
+          if (key === 'scrollEnabled') {
+            scrollHandle.innerHTML =
+              'Scrollを ' + (val ? 'OFF' : 'ON') + ' にする';
+          }
         },
       });
       tbody.appendChild(row);
     }
+
+    const actions = document.createElement('div');
+    const scrollHandle = document.createElement('button');
+    scrollHandle.addEventListener('click', e => {
+      e.stopPropagation();
+      if (scroller.scrollEnabled) {
+        scroller.pushScrollStopper(this);
+      } else {
+        scroller.removeScrollStopper(this);
+      }
+    });
+    actions.appendChild(scrollHandle);
+    this.el.appendChild(actions);
+
     scroller.observe(this);
     const styles: Partial<CSSStyleDeclaration> = {
       zIndex: '32767',
       position: 'fixed',
-      right: '0',
       top: '0',
+      right: '0',
       background: 'rgba(0, 0, 0, .5)',
       color: '#fff',
       fontSize: '10px',
