@@ -285,10 +285,10 @@ const scrollerObservableKeys: ScrollerObservableKeys[] = [
 ];
 
 /**
- * 任意のElement（or HTML Document）のスクロールやサイズ変更を監視し、
- * その情報を通知するクラスです。
- * [[DDEV]]を継承しており、イベントの購読[[Scroller.on]]等のインターフェースを利用するか、
- * [[Scroller.observe]]メソッドを利用します。
+ * 任意のElement（or HTML Document）のスクロールやサイズ変更を監視し、その情報を通知するクラスです。<br>
+ * <a href="https://dadajam4.github.io/dd-event/classes/_ddev_.ddev.html" target="_blank">DDEV</a>を継承しており、イベントの購読[[Scroller.on]]等のインターフェースを利用するか、
+ * [[Scroller.observe]]メソッドを利用します。<br>
+ * [[Scroller.on]]、[[Scroller.once]]で購読可能なイベントについては[[ScrollerEventMap]]を参照してください。
  */
 class Scroller extends DDEvent<ScrollerEventMap> {
   /**
@@ -296,6 +296,11 @@ class Scroller extends DDEvent<ScrollerEventMap> {
    * 保有すべきプロパティ一のキーの配列です。
    */
   static readonly scrollerObservableKeys = scrollerObservableKeys;
+
+  /**
+   * Scrollerの状態を示すenum値です。<br>
+   * @see [[ScrollerState]]
+   */
   static readonly States = ScrollerState;
 
   /**
@@ -306,17 +311,18 @@ class Scroller extends DDEvent<ScrollerEventMap> {
 
   /**
    * 縦、横のどちらのスクロールを基準とするかを示します。
-   * デフォルトはyです。
+   * デフォルトはyです。<br>
+   * この設定は[[Scroller.toElement]]のデフォルト値にも影響します。
    */
   baseAxis: ScrollAxis = 'y';
 
   /**
-   * スクロール系メソッドを利用する際のデフォルトの設定を示します。
+   * スクロール系メソッド[[Scroller.to]]等を利用する際のデフォルトの設定を示します。
    */
   scrollSettingsDefaults: ScrollBaseSettings = { ...defaultBaseSettings };
 
   /**
-   * 要素へスクロールする際のデフォルトの設定を示します。
+   * [[Scroller.toElement]]のデフォルトオプションの設定を示します。
    */
   scrollToElementSettingsDefaults: ScrollerScrollToElementOptions = {
     ...scrollToElementSettingsDefaults,
@@ -324,13 +330,15 @@ class Scroller extends DDEvent<ScrollerEventMap> {
 
   /**
    * 設定されたElement要素です。
+   * 初期化が完了していない時には本getterはundefinedを返却する事に注意してください。
    */
   get el(): Element {
     return this._el;
   }
 
   /**
-   * 現在の状態です。
+   * 現在の状態です。<br>
+   * @see: [[ScrollerState]]
    */
   get state(): ScrollerState {
     return this._state;

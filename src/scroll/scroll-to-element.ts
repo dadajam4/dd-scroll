@@ -5,24 +5,54 @@ import scroll, {
 } from './scroll-by-internal';
 import { $, cumulativeOffset, error } from './util';
 
+/**
+ * スクロール先の要素をElement or CSSクエリストリングで示します。
+ */
 export type ScrollToElementTarget = string | Element;
 
+/**
+ * 要素へスクロールする際のオプション設定です。
+ */
 export interface ScrollToElementSettings {
+  /**
+   * 要素へスクロールする際、そのスクロール先をずらす際に設定します。<br>
+   * x, y 個別に設定が可能ですが、シングルのnumberのみを指定した場合、x, y のそれぞれのオプションが有効な場合にのみその軸に設定されます。
+   */
   offset: number | { x: number; y: number };
+
+  /**
+   * 横スクロールの可否を示します。
+   */
   x: boolean;
+
+  /**
+   * 縦スクロールの可否を示します。
+   */
   y: boolean;
 }
 
+/**
+ * 要素スクロール利用事のデフォルト設定です。
+ * @see [[ScrollToElementSettings]]
+ */
 export const scrollToElementSettingsDefaults: ScrollToElementSettings = {
   offset: 0,
   x: false,
   y: true,
 };
 
+/**
+ * 要素へスクロールさせる際のオプション設定です。
+ */
 export type ScrollToElementOptions = Partial<
   ScrollOptions & ScrollToElementSettings
 >;
 
+/**
+ * 任意の要素の位置へスクロールします。
+ * @param target
+ * @param options
+ */
 export default function scrollToElement(
   target: ScrollToElementTarget,
   options: ScrollToElementOptions = {},

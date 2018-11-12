@@ -1,5 +1,6 @@
 const path = require('path');
 const HtmlWebpackPlugin = require('html-webpack-plugin');
+const playGroundBase = path.join(__dirname, 'docs/playground');
 
 module.exports = {
   mode: process.env.NODE_ENV || 'development', // development | production
@@ -9,13 +10,13 @@ module.exports = {
   },
 
   output: {
-    path: path.join(__dirname, 'dist'),
+    path: playGroundBase,
     filename: '[name].js',
-    library: 'Scroller',
-    libraryTarget: 'umd',
-    libraryExport: 'default',
-    // See https://github.com/webpack/webpack/issues/6522
-    globalObject: "typeof self !== 'undefined' ? self : this",
+    // library: 'Scroller',
+    // libraryTarget: 'umd',
+    // libraryExport: 'default',
+    // // See https://github.com/webpack/webpack/issues/6522
+    // globalObject: "typeof self !== 'undefined' ? self : this",
   },
 
   plugins: [
@@ -62,7 +63,7 @@ module.exports = {
   },
 
   devServer: {
-    contentBase: path.join(__dirname, 'dist'),
+    contentBase: playGroundBase,
     compress: true,
     host: '0.0.0.0',
     disableHostCheck: true,

@@ -7,32 +7,35 @@ import {
 import { $, error } from './util';
 import scrollTo from './scroll-to';
 
+/**
+ * y軸の両端の辺を示します。
+ */
 export type ScrollYSide = 'top' | 'bottom';
+
+/**
+ * x軸の両端の辺を示します。
+ */
 export type ScrollXSide = 'left' | 'right';
+
+/**
+ * コンテナの4辺を示します。
+ */
 export type ScrollSide = ScrollYSide | ScrollXSide;
 
+/**
+ * コンテナの辺へスクロールさせる際のターゲット指定のパターンです。
+ */
 export type ScrollToSideTargets =
   | ScrollSide
   | [ScrollSide]
   | [ScrollYSide, ScrollXSide]
   | [ScrollXSide, ScrollYSide];
-// function scrollToSide(side: ScrollSide, options?: ScrollOptions): ScrollResult;
-// function scrollToSide(
-//   sides: [ScrollSide],
-//   options?: ScrollOptions,
-// ): ScrollResult;
-// function scrollToSide(
-//   sides: [ScrollYSide, ScrollXSide] | [ScrollXSide, ScrollYSide],
-//   options?: ScrollOptions,
-// ): ScrollResult;
-// function scrollToSide(
-//   targets:
-//     | ScrollSide
-//     // | [ScrollSide]
-//     | [ScrollYSide, ScrollXSide]
-//     | [ScrollXSide, ScrollYSide],
-//   options?: ScrollOptions,
-// ): ScrollResult {
+
+/**
+ * コンテナをいずれかの辺までスクロールします。
+ * @param targets 辺を指定します。シングルの文字列、及び配列に対応しています。
+ * @param options
+ */
 function scrollToSide(
   targets: ScrollToSideTargets,
   options?: ScrollOptions,
@@ -62,34 +65,66 @@ function scrollToSide(
   return scrollTo(position, options);
 }
 
+/**
+ * コンテナを上辺までスクロールします。
+ * @param options
+ */
 export function scrollToTop(options?: ScrollOptions) {
   return scrollToSide('top', options);
 }
 
+/**
+ * コンテナを右辺までスクロールします。
+ * @param options
+ */
 export function scrollToRight(options?: ScrollOptions) {
   return scrollToSide('right', options);
 }
 
+/**
+ * コンテナを下辺までスクロールします。
+ * @param options
+ */
 export function scrollToBottom(options?: ScrollOptions) {
   return scrollToSide('bottom', options);
 }
 
+/**
+ * コンテナを左辺までスクロールします。
+ * @param options
+ */
 export function scrollToLeft(options?: ScrollOptions) {
   return scrollToSide('left', options);
 }
 
+/**
+ * コンテナを左上コーナーまでスクロールします。
+ * @param options
+ */
 export function scrollToLeftTop(options?: ScrollOptions) {
   return scrollToSide(['left', 'top'], options);
 }
 
+/**
+ * コンテナを左下コーナーまでスクロールします。
+ * @param options
+ */
 export function scrollToLeftBottom(options?: ScrollOptions) {
   return scrollToSide(['left', 'bottom'], options);
 }
 
+/**
+ * コンテナを右上コーナーまでスクロールします。
+ * @param options
+ */
 export function scrollToRightTop(options?: ScrollOptions) {
   return scrollToSide(['right', 'top'], options);
 }
 
+/**
+ * コンテナを右下コーナーまでスクロールします。
+ * @param options
+ */
 export function scrollToRightBottom(options?: ScrollOptions) {
   return scrollToSide(['right', 'bottom'], options);
 }

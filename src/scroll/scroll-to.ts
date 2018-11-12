@@ -5,10 +5,16 @@ import scroll, {
 } from './scroll-by-internal';
 import { $, error } from './util';
 
+/**
+ * 任意の位置（px）へコンテナをスクロールします。
+ * @param scrollPosition スクロール先を指定します。x, y 共にオプショナルなるです。未指定の軸は現在のスクロール値のまま保持されます。
+ * @param options
+ */
 export default function scrollTo(
-  { x, y }: Partial<ScrollPosition>,
+  scrollPosition: Partial<ScrollPosition>,
   options: ScrollOptions = {},
 ) {
+  let { x, y } = scrollPosition;
   const container = options.container || defaultSettings.container;
   const $container = $(container) as HTMLElement;
   if (!$container) throw error('missing container ' + container);
