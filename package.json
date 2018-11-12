@@ -1,6 +1,6 @@
 {
   "name": "dd-scroller",
-  "version": "0.0.2",
+  "version": "0.0.3",
   "description": "Service for DOM Element Scroll.",
   "main": "dist/dd-scroller.umd.js",
   "module": "dist/dd-scroller.esm.js",
@@ -20,7 +20,7 @@
     "build:umd": "rollup --config build/rollup.config.js --format umd --file dist/dd-scroller.umd.js",
     "build:es": "rollup --config build/rollup.config.js --format es --file dist/dd-scroller.esm.js",
     "build:unpkg": "rollup --config build/rollup.config.js --format iife --file dist/dd-scroller.min.js",
-    "docs": "rimraf ./docs && typedoc src --out docs --excludeExternals --externalPattern **/dd-event/**/*.d.ts --mode modules",
+    "docs": "rimraf ./docs && typedoc src --out docs --excludeExternals --externalPattern **/dd-event/**/*.d.ts --mode modules && touch ./docs/.nojekyll",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "repository": {
