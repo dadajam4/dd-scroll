@@ -1,4 +1,8 @@
-import scroll, { ScrollOptions, ScrollResult, defaultSettings } from './scroll';
+import scroll, {
+  ScrollOptions,
+  ScrollResult,
+  defaultSettings,
+} from './scroll-by-internal';
 import { $, cumulativeOffset, error } from './util';
 
 export type ScrollToElementTarget = string | Element;

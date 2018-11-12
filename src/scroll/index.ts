@@ -5,7 +5,10 @@ export {
   ScrollCallback,
   ScrollCallbackValues,
   ScrollPosition,
-} from './scroll';
+  ScrollerScrollOptions,
+  ScrollBaseSettings,
+  defaultBaseSettings,
+} from './scroll-by-internal';
 
 export * from './scroll-by';
 export * from './scroll-to';

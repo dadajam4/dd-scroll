@@ -2,6 +2,15 @@ import './polyfills';
 import DDEvent from 'dd-event';
 import { HAS_WINDOW, error } from './util';
 import {
+  ScrollPosition,
+  ScrollOptions,
+  defaultBaseSettings,
+  ScrollBaseSettings,
+  ScrollToElementTarget,
+  ScrollResult,
+  ScrollerScrollOptions,
+  scrollToElementSettingsDefaults,
+  ScrollToElementSettings,
   scrollBy,
   scrollTo,
   scrollToElement,
@@ -10,80 +19,218 @@ import {
   scrollToRight,
   scrollToBottom,
   scrollToLeft,
-  ScrollResult,
+  scrollToLeftTop,
+  scrollToLeftBottom,
+  scrollToRightTop,
+  scrollToRightBottom,
+  ScrollToSideTargets,
+  ScrollToElementOptions,
 } from './scroll';
 
 export * from './scroll';
 
+/**
+ * [[Scroller]]を任意のElementまでスクロールさせる際のオプションです。
+ * 詳細は [[ScrollerScrollOptions]] 及び、 [[ScrollToElementSettings]] を参照してください。
+ */
+export type ScrollerScrollToElementOptions = Partial<
+  ScrollerScrollOptions & ScrollToElementSettings
+>;
+
 // Scroller は設定されたコンテキスト要素に応じてscrollやsize検知のリスナを
 // window か 自身のelementに切り替えます
 type ScrollerEventTarget = Window | Element;
+
+/**
+ * Scrollerに縦スクロールが発生した際の方向を示すTypeです。
+ */
 export type ScrollYDirection = 'top' | 'bottom';
+
+/**
+ * Scrollerに横スクロールが発生した際の方向を示すTypeです。
+ */
 export type ScrollXDirection = 'left' | 'right';
+
+/**
+ * Scrollerにスクロールが発生した際の方向を示すTypeです。
+ */
 export type ScrollDirection = ScrollYDirection | ScrollXDirection;
 
 /**
- * スクロールの方向を示します。
- * xは水平方向、
- * yは垂直方向をそれぞれ示します
+ * スクロールの軸を示します。
+ * xは水平、
+ * yは垂直をそれぞれ示します
  */
 export type ScrollAxis = 'x' | 'y';
 
+/**
+ * Scrollerの基本セッティングです。
+ * 個々のフィールドの詳細は[[Scroller]]の同名プロパティを参照してください。
+ */
 export interface ScrollerSetting {
   el: Element | string;
-  scrollStartJudgePx: number;
   scrollingJudgeInterval: number;
   baseAxis: ScrollAxis;
 }
 
+/**
+ * Elementのscrollイベントを検知した際に、通知する情報です
+ * 現在のスクロールポジションや、スクロール開始（or前回のtick）からのスクロール量が渡されます。
+ */
 export interface ScrollerPayload {
+  /**
+   * [[Scroller.scrollTop]] が渡されます
+   */
   top: number;
+
+  /**
+   * [[Scroller.scrollLeft]] が渡されます
+   */
   left: number;
+
+  /**
+   * [[Scroller.scrollBottom]] が渡されます
+   */
   bottom: number;
+
+  /**
+   * [[Scroller.scrollRight]] が渡されます
+   */
   right: number;
 
+  /**
+   * 発生したスクロールの軸が渡されます。
+   * 斜めスクロールが発生した際は、x、yのうち移動量が大きいものが自動判定されて渡されます。
+   * どちらも同じ移動量であった場合は[[Scroller.baseAxis]]の設定値が渡されます。
+   */
   axis: ScrollAxis;
 
-  // directions
+  /**
+   * 発生したスクロールの方向が渡されます。
+   * 斜めスクロールが発生した際は、x、yのうち移動量が大きいものが自動判定されて渡されます。
+   * どちらも同じ移動量であった場合は[[Scroller.baseAxis]]の設定値が渡されます。
+   */
   direction: ScrollDirection;
+
+  /**
+   * 発生したスクロールの水平方向が渡されます。
+   */
   directionX: ScrollXDirection;
+
+  /**
+   * 発生したスクロールの垂直方向が渡されます。
+   */
   directionY: ScrollYDirection;
 
   // tick ammount at element.on('scroll') detect
+
+  /**
+   * [[Scroller.on]]('scroll')時の前回からの水平移動量が渡されます。
+   */
   tickedX: number;
+
+  /**
+   * [[Scroller.on]]('scroll')時の前回からの垂直移動量が渡されます。
+   */
   tickedY: number;
 
-  // total ammount from scrollStart
+  /**
+   * [[Scroller.on]]('scrollStart')時からの合計水平移動量が渡されます。
+   */
   totalX: number;
+
+  /**
+   * [[Scroller.on]]('scrollStart')時からの合計垂直移動量が渡されます。
+   */
   totalY: number;
 }
 
-interface ScrollerScrollEventMap {
+/**
+ * Scrollerは設定されたElementのスクロール開始、tick、終了を検知し
+ * イベントを通知します。
+ * これらのイベントを購読する事でスクロール量や移動方向を検知可能です。
+ */
+export interface ScrollerScrollEventMap {
+  /**
+   * スクロールの開始時に発生します。
+   */
   scrollStart: ScrollerPayload;
+
+  /**
+   * 毎スクロール検知時に発生します。
+   */
   scroll: ScrollerPayload;
+
+  /**
+   * スクロールの終了時に発生します。
+   */
   scrollEnd: ScrollerPayload;
 }
 
+/**
+ * Scrollerに発生するイベントの全てです。
+ */
 export interface ScrollerEventMap extends ScrollerScrollEventMap {
+  /**
+   * Scrollerが利用可能になった時（Elementが設定されて初期化が完了した）に発生します。
+   */
   ready: void;
+
+  /**
+   * [[Scroller.state]]が変更された時に発生します。
+   */
   changeState: ScrollerState;
+
+  /**
+   * [[Scroller.el]]のサイズ変更を検知した際に発生します。
+   */
   resize: { width: number; height: number };
+
+  /**
+   * [[Scroller.lastAxis]]の変更を検知した際に発生します。
+   */
   changeAxis: ScrollAxis;
+
+  /**
+   * [[Scroller.lastDirection]]の変更を検知した際に発生します。
+   */
   changeLastDirection: ScrollDirection;
+
+  /**
+   * [[Scroller.lastYDirection]]の変更を検知した際に発生します。
+   */
   changeLastYDirection: ScrollYDirection;
+
+  /**
+   * [[Scroller.lastXDirection]]の変更を検知した際に発生します。
+   */
   changeLastXDirection: ScrollXDirection;
 }
 
+/**
+ * Scrollerの状態を示します。
+ */
 export enum ScrollerState {
+  /**
+   * Scrollerが初期化されていない（Elementが設定されていない）状態を示します。
+   */
   Pending = 'pending',
+
+  /**
+   * Scrollerが初期化されているが、[[Scroller.el]]のリサイズやスクロールのイベント監視が動作していない状態を示します。
+   */
   Ready = 'ready',
+
+  /**
+   * Scrollerが初期化されていて、[[Scroller.el]]のリサイズやスクロールのイベント監視が動作している状態を示します。
+   */
   Running = 'running',
+
+  /**
+   * [[Scroller.destroy]]が実行され、Scrollerが利用不可である状態を示します。
+   */
   Destroyed = 'destroyed',
 }
-
-const DEFAULT_SCROLL_START_JUDGE_PX = 0;
-const DEFAULT_SCROLLING_JUDGE_INTERVAL = 500;
-const DEFAULT_BASE_AXIS: ScrollAxis = 'y';
 
 /**
  * Scrollerクラスの状態を監視＆同期するオブジェクトが
@@ -111,6 +258,10 @@ export interface ScrollerObserver {
   nowScrolling: boolean;
 }
 
+/**
+ * Scrollerクラスの状態を監視＆同期するオブジェクトが
+ * 保有すべきプロパティ一のキー覧です。
+ */
 export type ScrollerObservableKeys = keyof ScrollerObserver;
 const scrollerObservableKeys: ScrollerObservableKeys[] = [
   'state',
@@ -133,101 +284,213 @@ const scrollerObservableKeys: ScrollerObservableKeys[] = [
   'nowScrolling',
 ];
 
-interface ScrollerScrolls {
-  by: typeof scrollBy;
-  to: typeof scrollTo;
-  toElement: typeof scrollToElement;
-  toSide: typeof scrollToSide;
-  toTop: typeof scrollToTop;
-  toRight: typeof scrollToRight;
-  toBottom: typeof scrollToBottom;
-  toLeft: typeof scrollToLeft;
-}
-
-interface Scroller extends ScrollerScrolls {}
-
-class Scroller extends DDEvent<ScrollerEventMap> implements ScrollerScrolls {
+/**
+ * 任意のElement（or HTML Document）のスクロールやサイズ変更を監視し、
+ * その情報を通知するクラスです。
+ * [[DDEV]]を継承しており、イベントの購読[[Scroller.on]]等のインターフェースを利用するか、
+ * [[Scroller.observe]]メソッドを利用します。
+ */
+class Scroller extends DDEvent<ScrollerEventMap> {
+  /**
+   * Scrollerクラスの状態を監視＆同期するオブジェクトが
+   * 保有すべきプロパティ一のキーの配列です。
+   */
   static readonly scrollerObservableKeys = scrollerObservableKeys;
   static readonly States = ScrollerState;
 
-  scrollStartJudgePx = DEFAULT_SCROLL_START_JUDGE_PX;
-  scrollingJudgeInterval = DEFAULT_SCROLLING_JUDGE_INTERVAL;
-  baseAxis: ScrollAxis = DEFAULT_BASE_AXIS;
+  /**
+   * スクロールを検知してから、移動がなくなった際に、何ms後にスクロール終了と判定するかのインターバル値を示します。
+   * デフォルトは500です。
+   */
+  scrollingJudgeInterval = 500;
 
+  /**
+   * 縦、横のどちらのスクロールを基準とするかを示します。
+   * デフォルトはyです。
+   */
+  baseAxis: ScrollAxis = 'y';
+
+  /**
+   * スクロール系メソッドを利用する際のデフォルトの設定を示します。
+   */
+  scrollSettingsDefaults: ScrollBaseSettings = { ...defaultBaseSettings };
+
+  /**
+   * 要素へスクロールする際のデフォルトの設定を示します。
+   */
+  scrollToElementSettingsDefaults: ScrollerScrollToElementOptions = {
+    ...scrollToElementSettingsDefaults,
+  };
+
+  /**
+   * 設定されたElement要素です。
+   */
   get el(): Element {
     return this._el;
   }
+
+  /**
+   * 現在の状態です。
+   */
   get state(): ScrollerState {
     return this._state;
   }
+
+  /**
+   * 未初期化である場合trueを示します。
+   */
   get isPending(): boolean {
     return this._state === ScrollerState.Pending;
   }
+
+  /**
+   * 初期化済み＆停止状態である場合trueを示します。
+   */
   get isReady(): boolean {
     return this._state === ScrollerState.Ready;
   }
+
+  /**
+   * 初期化済み＆動作中である場合trueを示します。
+   */
   get isRunning(): boolean {
     return this._state === ScrollerState.Running;
   }
+
+  /**
+   * インスタンスが破棄済みである場合trueを示します。
+   */
   get isDestroyed(): boolean {
     return this._state === ScrollerState.Destroyed;
   }
+
+  /**
+   * スクロール要素の幅を示します。
+   */
   get containerWidth(): number {
     return this._containerWidth;
   }
+
+  /**
+   * スクロール要素の高さを示します。
+   */
   get containerHeight(): number {
     return this._containerHeight;
   }
+
+  /**
+   * スクロール要素内のコンテンツの幅を示します。
+   */
   get scrollWidth(): number {
     return this._scrollWidth;
   }
+
+  /**
+   * スクロール要素内のコンテンツの高さを示します。
+   */
   get scrollHeight(): number {
     return this._scrollHeight;
   }
+
+  /**
+   * 現在の上辺からのスクロール量を示します。
+   */
   get scrollTop(): number {
     return this._scrollTop;
   }
+
+  /**
+   * 上辺からのスクロール量を設定します。
+   */
   set scrollTop(scrollTop: number) {
     if (!this.el) return;
     this.el.scrollTop = scrollTop;
   }
+
+  /**
+   * 現在の右辺からのスクロール量を示します。
+   */
   get scrollRight(): number {
     return this._scrollRight;
   }
+
+  /**
+   * 右辺からのスクロール量を設定します。
+   */
   set scrollRight(scrollRight: number) {
     if (!this.el) return;
     this.el.scrollLeft = this._scrollWidth - this._containerWidth - scrollRight;
   }
+
+  /**
+   * 現在の下辺からのスクロール量を示します。
+   */
   get scrollBottom(): number {
     return this._scrollBottom;
   }
+
+  /**
+   * 下辺からのスクロール量を設定します。
+   */
   set scrollBottom(scrollBottom: number) {
     if (!this.el) return;
     this.el.scrollTop =
       this._scrollHeight - this._containerHeight - scrollBottom;
   }
+
+  /**
+   * 現在の左辺からのスクロール量を示します。
+   */
   get scrollLeft(): number {
     return this._scrollLeft;
   }
+
+  /**
+   * 左辺からのスクロール量を設定します。
+   */
   set scrollLeft(scrollLeft: number) {
     if (!this.el) return;
     this.el.scrollLeft = scrollLeft;
   }
+
+  /**
+   * 現在スクロール中である場合trueを示します。
+   */
   get nowScrolling(): boolean {
     return this._nowScrolling;
   }
+
+  /**
+   * 最後に検知したスクロールの軸を示します。
+   */
   get lastAxis(): ScrollAxis {
     return this._lastAxis;
   }
+
+  /**
+   * 最後に検知したスクロールの方向を示します。
+   */
   get lastDirection(): ScrollDirection {
     return this._lastDirection;
   }
+
+  /**
+   * 最後に検知したスクロールの垂直方向を示します。
+   */
   get lastYDirection(): ScrollYDirection {
     return this._lastYDirection;
   }
+
+  /**
+   * 最後に検知したスクロールの水平方向を示します。
+   */
   get lastXDirection(): ScrollXDirection {
     return this._lastXDirection;
   }
+
+  /**
+   * 最後に検知したスクロールにより通知した情報を示します。
+   */
   get lastPayload(): ScrollerPayload {
     return {
       top: this._scrollTop,
@@ -282,20 +545,23 @@ class Scroller extends DDEvent<ScrollerEventMap> implements ScrollerScrolls {
    * Scrollerインスタンスを作成します。
    * コンテキストとなるElementをこの時点で指定するか否かは任意です。
    *
-   * @param settingOrElementOrQueryString 任意です。[[ScrollerSetting]]か Elementを直接指定します。この時点でElementを指定しない場合は、[[setElement]]を実行するまでインスタンスは動作しません。
+   * @param settingOrElementOrQueryString 任意です。[[ScrollerSetting]]か Element（or cssクエリセレクタ文字列）を直接指定します。この時点でElementを指定しない場合は、[[setElement]]を実行するまでインスタンスは動作しません。
    */
   constructor(
-    settingOrElementOrQueryString: Partial<ScrollerSetting> | Element | string = {},
+    settingOrElementOrQueryString:
+      | Partial<ScrollerSetting>
+      | Element
+      | string = {},
   ) {
     super();
 
     const convertedSetting: Partial<ScrollerSetting> =
-      typeof settingOrElementOrQueryString === 'string' || (HAS_WINDOW && settingOrElementOrQueryString instanceof Element)
-        ? (settingOrElementOrQueryString = { el: <Element | string>settingOrElementOrQueryString })
+      typeof settingOrElementOrQueryString === 'string' ||
+      (HAS_WINDOW && settingOrElementOrQueryString instanceof Element)
+        ? (settingOrElementOrQueryString = {
+            el: <Element | string>settingOrElementOrQueryString,
+          })
         : (settingOrElementOrQueryString as Partial<ScrollerSetting>);
-
-    if (convertedSetting.scrollStartJudgePx !== undefined)
-      this.scrollStartJudgePx = convertedSetting.scrollStartJudgePx;
 
     if (convertedSetting.scrollingJudgeInterval !== undefined)
       this.scrollingJudgeInterval = convertedSetting.scrollingJudgeInterval;
@@ -312,6 +578,11 @@ class Scroller extends DDEvent<ScrollerEventMap> implements ScrollerScrolls {
     this.setElement(convertedSetting.el);
   }
 
+  /**
+   * インスタンスにElementを設定します。特別な理由（SSRの利用等）によりコンストラクタでElementを指定できない場合、
+   * 本メソッドを利用しブラウザコンテキスト配下で本メソッドを実行してください。
+   * @param el Element、もしくはCSSクエリセレクタ文字列を指定します。
+   */
   setElement(el?: Element | string) {
     if (!HAS_WINDOW)
       error('Element can be set only when it is under DOM contest.');
@@ -336,12 +607,19 @@ class Scroller extends DDEvent<ScrollerEventMap> implements ScrollerScrolls {
     this._setup();
   }
 
+  /**
+   * インスタンスが実行可能になった際にresolveされるPromiseインスタンスを返却します。
+   */
   ready(): Promise<void> {
     this._checkDestroyed();
     if (!this.isPending) return Promise.resolve();
     return new Promise(resolve => this._readyResolvers.push(resolve));
   }
 
+  /**
+   * インスタンスの動作を開始します。本インスタンスはElementが設定され初期化された際に自動で動作を開始しますが、
+   * [[Scroller.stop]]メソッドを利用し動作を停止した後に再開する場合に本メソッドを利用します。
+   */
   async start(): Promise<void> {
     this._checkDestroyed();
     if (this.isRunning) return;
@@ -350,6 +628,12 @@ class Scroller extends DDEvent<ScrollerEventMap> implements ScrollerScrolls {
     this._setState(ScrollerState.Running);
   }
 
+  /**
+   * インスタンスの動作（スクロール、リサイズイベントの検知等）を停止します。
+   * 何らかの理由で動作を停止させたい場合に利用してください。
+   * 本メソッドを実行後もインスタンス内の状態は保持されたままです。
+   * 完全にインスタンスを破棄するためには[[Scroller.destroy]]を利用してください。
+   */
   stop(): void {
     this._checkDestroyed();
     if (!this.isRunning) return;
@@ -357,6 +641,13 @@ class Scroller extends DDEvent<ScrollerEventMap> implements ScrollerScrolls {
     this._setState(ScrollerState.Ready);
   }
 
+  /**
+   * インスタンスの動作を停止し、内部情報を完全に破棄します。
+   * これに伴い、スクロール中であった場合にはキャンセルされ、以後イベント通知は完全に行われません。
+   * また[[Scroller.start]]メソッドでの再利用も不可となります。
+   * 本インスタンスの利用を完全に停止する場合に必ず実行し、利用側のオブジェクト等において本インスタンスへの参照を完全に削除してください。
+   * 本メソッドはSPA等でのサービスにおいては意識的に実行する事を強く推奨します。
+   */
   destroy() {
     if (this.isDestroyed) return;
     this.stop();
@@ -375,16 +666,18 @@ class Scroller extends DDEvent<ScrollerEventMap> implements ScrollerScrolls {
     this.offAll();
   }
 
-  cancel() {
-    if (!this._scrollToResult) return;
-    this._scrollToResult.cancel();
-    this._clearScrollToResult();
-  }
-
+  /**
+   * インスタンス内部のスクロール量や、Elementのサイズを強制的に更新します。
+   * 基本的に利用が必要なケースはありませんが、何らかの理由で更新をトリガーしたい場合に利用します。
+   */
   update(): void {
     this._update();
   }
 
+  /**
+   * インスタンス内の情報をjsonオブジェクトとして返却します。
+   * 情報の詳細は[[ScrollerObserver]]を参照してください。
+   */
   toJSON(): ScrollerObserver {
     const json: Partial<ScrollerObserver> = {};
     for (const key of scrollerObservableKeys) {
@@ -393,10 +686,23 @@ class Scroller extends DDEvent<ScrollerEventMap> implements ScrollerScrolls {
     return <ScrollerObserver>json;
   }
 
+  /**
+   * [[Scroller.toJSON]]の情報を文字列として返却します。
+   */
   toString(): string {
     return JSON.stringify(this.toJSON());
   }
 
+  /**
+   * 本インスタンスの情報を購読するためのオブジェクトを設定する事で、
+   * インスタンスの内部情報が変更される度にパラメータが同期されます。
+   * 設定するオブジェクトは[[ScrollerObserver]]のインターフェースを満たしていれば内容は問いません。
+   * 本機能により同期される方法は単純にオブジェクトプロパティへの変数代入です。
+   * 従って対象となるプロパティをgetterとして実装（Ex: Vue computed等、、）しておく事により、
+   * 同期を受け取るオブジェクト側でパラメータ変更後の動作をリアクティブに実装可能です。
+   * @param observer 同期させたいオブジェクト
+   * @returns unobserve 同期を停止するためのメソッド
+   */
   observe(observer: ScrollerObserver): () => void {
     if (!this._observers.includes(observer)) {
       this._observers.push(observer);
@@ -408,11 +714,179 @@ class Scroller extends DDEvent<ScrollerEventMap> implements ScrollerScrolls {
     return unobserve;
   }
 
+  /**
+   * [[Scroller.observe]]でパラメータ同期中のオブジェクトを停止します。
+   * [[Scroller.destroy]]実行時にも、同期中のオブジェクトは全停止されますが、destroy前に任意のタイミングで停止したい場合
+   * 本メソッドを利用します。
+   * @param observer 同期中のオブジェクト
+   */
   unobserve(observer: ScrollerObserver) {
     const index = this._observers.indexOf(observer);
     if (index !== -1) {
       this._observers.splice(index, 1);
     }
+  }
+
+  /**
+   * スクロール中であった場合、スクロールをキャンセルします。
+   */
+  cancel() {
+    if (!this._scrollToResult) return;
+    this._scrollToResult.cancel();
+    this._clearScrollToResult();
+  }
+
+  /**
+   * x, yの差分pxを指定しスクロールします。
+   * メソッド、パラメータの詳細は[[scrollBy]]を参照してください。
+   * @param diffX 横移動量
+   * @param diffY 縦移動量
+   * @param options
+   */
+  by(
+    diffX: number,
+    diffY: number,
+    options?: ScrollerScrollOptions,
+  ): ScrollResult {
+    return this._setScrollToResult(
+      scrollBy(diffX, diffY, this._createMergedScrollOptions(options)),
+    );
+  }
+
+  /**
+   * 指定の座標をスクロールします。
+   * メソッド、パラメータの詳細は[[scrollTo]]を参照してください。
+   * @param scrollPosition
+   * @param options
+   */
+  to(
+    scrollPosition: Partial<ScrollPosition>,
+    options?: ScrollerScrollOptions,
+  ): ScrollResult {
+    return this._setScrollToResult(
+      scrollTo(scrollPosition, this._createMergedScrollOptions(options)),
+    );
+  }
+
+  /**
+   * 指定の要素の位置へスクロールします。
+   * メソッド、パラメータの詳細は[[scrollToElement]]を参照してください。
+   * オプションのx, yが未設定であった場合、[[Scroller.baseAxis]]により自動設定されます。
+   * @param target
+   * @param options
+   */
+  toElement(
+    target: ScrollToElementTarget,
+    options?: ScrollerScrollToElementOptions,
+  ) {
+    const merged = this._createMergedScrollToElementOptions(options);
+    if (merged.x === undefined) merged.x = this.baseAxis === 'x';
+    if (merged.y === undefined) merged.y = this.baseAxis === 'y';
+
+    return this._setScrollToResult(scrollToElement(target, merged));
+  }
+
+  /**
+   * 指定の辺へスクロールします。
+   * メソッド、パラメータの詳細は[[scrollToSide]]を参照してください。
+   * @param targets
+   * @param options
+   */
+  toSide(
+    targets: ScrollToSideTargets,
+    options?: ScrollerScrollOptions,
+  ): ScrollResult {
+    return this._setScrollToResult(
+      scrollToSide(targets, this._createMergedScrollOptions(options)),
+    );
+  }
+
+  /**
+   * 上辺へスクロールします。
+   * メソッド、パラメータの詳細は[[scrollToTop]]を参照してください。
+   * @param options
+   */
+  toTop(options?: ScrollerScrollOptions) {
+    return this._setScrollToResult(
+      scrollToTop(this._createMergedScrollOptions(options)),
+    );
+  }
+
+  /**
+   * 右辺へスクロールします。
+   * メソッド、パラメータの詳細は[[scrollToRight]]を参照してください。
+   * @param options
+   */
+  toRight(options?: ScrollerScrollOptions) {
+    return this._setScrollToResult(
+      scrollToRight(this._createMergedScrollOptions(options)),
+    );
+  }
+
+  /**
+   * 下辺へスクロールします。
+   * メソッド、パラメータの詳細は[[scrollToBottom]]を参照してください。
+   * @param options
+   */
+  toBottom(options?: ScrollerScrollOptions) {
+    return this._setScrollToResult(
+      scrollToBottom(this._createMergedScrollOptions(options)),
+    );
+  }
+
+  /**
+   * 左辺へスクロールします。
+   * メソッド、パラメータの詳細は[[scrollToLeft]]を参照してください。
+   * @param options
+   */
+  toLeft(options?: ScrollerScrollOptions) {
+    return this._setScrollToResult(
+      scrollToLeft(this._createMergedScrollOptions(options)),
+    );
+  }
+
+  /**
+   * 左上コーナーへスクロールします。
+   * メソッド、パラメータの詳細は[[scrollToLeftTop]]を参照してください。
+   * @param options
+   */
+  toLeftTop(options?: ScrollerScrollOptions) {
+    return this._setScrollToResult(
+      scrollToLeftTop(this._createMergedScrollOptions(options)),
+    );
+  }
+
+  /**
+   * 左下コーナーへスクロールします。
+   * メソッド、パラメータの詳細は[[scrollToLeftBottom]]を参照してください。
+   * @param options
+   */
+  toLeftBottom(options?: ScrollerScrollOptions) {
+    return this._setScrollToResult(
+      scrollToLeftBottom(this._createMergedScrollOptions(options)),
+    );
+  }
+
+  /**
+   * 右上コーナーへスクロールします。
+   * メソッド、パラメータの詳細は[[scrollToRightTop]]を参照してください。
+   * @param options
+   */
+  toRightTop(options?: ScrollerScrollOptions) {
+    return this._setScrollToResult(
+      scrollToRightTop(this._createMergedScrollOptions(options)),
+    );
+  }
+
+  /**
+   * 右下コーナーへスクロールします。
+   * メソッド、パラメータの詳細は[[scrollToRightBottom]]を参照してください。
+   * @param options
+   */
+  toRightBottom(options?: ScrollerScrollOptions) {
+    return this._setScrollToResult(
+      scrollToRightBottom(this._createMergedScrollOptions(options)),
+    );
   }
 
   private async _setup(): Promise<void> {
@@ -681,10 +1155,10 @@ class Scroller extends DDEvent<ScrollerEventMap> implements ScrollerScrolls {
     }, this.scrollingJudgeInterval);
   }
 
-  private _clearScrollToResult() {
-    if (!this._scrollToResult) return;
-    this._scrollToResult = null;
-  }
+  // private _clearScrollToResult() {
+  //   if (!this._scrollToResult) return;
+  //   this._scrollToResult = null;
+  // }
 
   private _syncToObserver(
     observer: ScrollerObserver,
@@ -704,50 +1178,41 @@ class Scroller extends DDEvent<ScrollerEventMap> implements ScrollerScrolls {
       this._syncToObserver(observer, keys);
     }
   }
-}
 
-interface PrototypeMap {
-  key: keyof ScrollerScrolls;
-  i: number;
-  f: Function;
-}
-
-const prototypeMappings: PrototypeMap[] = [
-  { key: 'by', i: 2, f: scrollBy },
-  { key: 'to', i: 1, f: scrollTo },
-  { key: 'toElement', i: 1, f: scrollToElement },
-  { key: 'toSide', i: 1, f: scrollToSide },
-  { key: 'toTop', i: 0, f: scrollToTop },
-  { key: 'toRight', i: 0, f: scrollToRight },
-  { key: 'toBottom', i: 0, f: scrollToBottom },
-  { key: 'toLeft', i: 0, f: scrollToLeft },
-];
-
-for (const define of prototypeMappings) {
-  const key = define.key;
-  const optioinsIndex = define.i;
-  const func = define.f;
-  const isElement = key === 'toElement';
-  (Scroller as any).prototype[key] = function(...args: any[]) {
-    const self = this as Scroller;
-    const options: any = {
-      ...args[optioinsIndex],
+  private _createMergedScrollOptions(
+    source?: ScrollerScrollOptions,
+  ): ScrollOptions {
+    const merged: ScrollOptions = {
+      container: this._el,
+      ...this.scrollSettingsDefaults,
+      ...source,
     };
-    options.container = self.el;
+    return merged;
+  }
 
-    if (isElement) {
-      if (options.x === undefined) options.x = this.baseAxis === 'x';
-      if (options.y === undefined) options.y = this.baseAxis === 'y';
-    }
+  private _createMergedScrollToElementOptions(
+    source?: ScrollerScrollToElementOptions,
+  ): ScrollToElementOptions {
+    const merged: ScrollToElementOptions = {
+      container: this._el,
+      ...this.scrollToElementSettingsDefaults,
+      ...source,
+    };
+    return merged;
+  }
 
-    const createdArgs = [...args];
-    createdArgs[optioinsIndex] = options;
-    this._scrollToResult = func(...createdArgs);
-    this._scrollToResult.promise.then(() => {
+  private _clearScrollToResult() {
+    if (!this._scrollToResult) return;
+    this._scrollToResult = null;
+  }
+
+  private _setScrollToResult(result: ScrollResult): ScrollResult {
+    this._scrollToResult = result;
+    result.promise.then(() => {
       this._clearScrollToResult();
     });
-    return this._scrollToResult;
-  };
+    return result;
+  }
 }
 
 export default Scroller;

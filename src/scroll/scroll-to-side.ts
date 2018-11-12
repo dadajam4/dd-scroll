@@ -3,7 +3,7 @@ import {
   ScrollOptions,
   defaultSettings,
   ScrollResult,
-} from './scroll';
+} from './scroll-by-internal';
 import { $, error } from './util';
 import scrollTo from './scroll-to';
 
@@ -11,21 +11,30 @@ export type ScrollYSide = 'top' | 'bottom';
 export type ScrollXSide = 'left' | 'right';
 export type ScrollSide = ScrollYSide | ScrollXSide;
 
-function scrollToSide(side: ScrollSide, options?: ScrollOptions): ScrollResult;
+export type ScrollToSideTargets =
+  | ScrollSide
+  | [ScrollSide]
+  | [ScrollYSide, ScrollXSide]
+  | [ScrollXSide, ScrollYSide];
+// function scrollToSide(side: ScrollSide, options?: ScrollOptions): ScrollResult;
+// function scrollToSide(
+//   sides: [ScrollSide],
+//   options?: ScrollOptions,
+// ): ScrollResult;
+// function scrollToSide(
+//   sides: [ScrollYSide, ScrollXSide] | [ScrollXSide, ScrollYSide],
+//   options?: ScrollOptions,
+// ): ScrollResult;
+// function scrollToSide(
+//   targets:
+//     | ScrollSide
+//     // | [ScrollSide]
+//     | [ScrollYSide, ScrollXSide]
+//     | [ScrollXSide, ScrollYSide],
+//   options?: ScrollOptions,
+// ): ScrollResult {
 function scrollToSide(
-  sides: [ScrollSide],
-  options?: ScrollOptions,
-): ScrollResult;
-function scrollToSide(
-  sides: [ScrollYSide, ScrollXSide] | [ScrollXSide, ScrollYSide],
-  options?: ScrollOptions,
-): ScrollResult;
-function scrollToSide(
-  targets:
-    | ScrollSide
-    | [ScrollSide]
-    | [ScrollYSide, ScrollXSide]
-    | [ScrollXSide, ScrollYSide],
+  targets: ScrollToSideTargets,
   options?: ScrollOptions,
 ): ScrollResult {
   const sides: ScrollSide[] = typeof targets === 'string' ? [targets] : targets;
@@ -67,6 +76,22 @@ export function scrollToBottom(options?: ScrollOptions) {
 
 export function scrollToLeft(options?: ScrollOptions) {
   return scrollToSide('left', options);
+}
+
+export function scrollToLeftTop(options?: ScrollOptions) {
+  return scrollToSide(['left', 'top'], options);
+}
+
+export function scrollToLeftBottom(options?: ScrollOptions) {
+  return scrollToSide(['left', 'bottom'], options);
+}
+
+export function scrollToRightTop(options?: ScrollOptions) {
+  return scrollToSide(['right', 'top'], options);
+}
+
+export function scrollToRightBottom(options?: ScrollOptions) {
+  return scrollToSide(['right', 'bottom'], options);
 }
 
 export default scrollToSide;

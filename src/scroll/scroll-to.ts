@@ -2,7 +2,7 @@ import scroll, {
   ScrollPosition,
   ScrollOptions,
   defaultSettings,
-} from './scroll';
+} from './scroll-by-internal';
 import { $, error } from './util';
 
 export default function scrollTo(

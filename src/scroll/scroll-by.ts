@@ -1,4 +1,4 @@
-import scroll, { ScrollOptions, ScrollResult } from './scroll';
+import scroll, { ScrollOptions, ScrollResult } from './scroll-by-internal';
 
 export default function scrollBy(
   diffX: number,

@@ -9,16 +9,23 @@ import {
   error,
 } from './util';
 
-export interface ScrollSettings {
-  container: string | Element;
+export interface ScrollBaseSettings {
   duration: number;
   easing: EasingName;
   cancelable: boolean;
+}
+
+export interface WithoutContainerScrollSettings extends ScrollBaseSettings {
   onProgoress?: ScrollCallback;
   onCancel?: ScrollCallback;
   onDone?: ScrollCallback;
 }
 
+export interface ScrollSettings extends WithoutContainerScrollSettings {
+  container: string | Element;
+}
+
+export type ScrollerScrollOptions = Partial<WithoutContainerScrollSettings>;
 export type ScrollOptions = Partial<ScrollSettings>;
 
 export type ScrollCanceller = (
@@ -48,13 +55,17 @@ export interface ScrollPosition {
   y: number;
 }
 
+export const defaultBaseSettings: ScrollBaseSettings = {
+  duration: 500,
+  easing: 'ease',
+  cancelable: true,
+};
+
 export const defaultSettings: ScrollSettings = {
   get container(): Element {
     return document.scrollingElement as Element;
   },
-  duration: 500,
-  easing: 'ease',
-  cancelable: true,
+  ...defaultBaseSettings,
 };
 
 interface ComputedValues {
