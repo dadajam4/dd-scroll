@@ -6,9 +6,9 @@ import { uglify } from 'rollup-plugin-uglify';
 export default ({ format }) => {
   const isES = format === 'es';
   const isIIFE = format === 'iife';
-  const external = isES ? ['dd-event'] : [];
+  const external = isES ? ['dd-event', 'dd-visibility'] : [];
   const nodeResolveTargets = ['bezier-easing'];
-  if (!isES) nodeResolveTargets.push('dd-event');
+  if (!isES) nodeResolveTargets.push('dd-event', 'dd-visibility');
 
   const plugins = [
     typescript(),

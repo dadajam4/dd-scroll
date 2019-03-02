@@ -6,7 +6,11 @@ if (!(window as any).ResizeObserver) {
 
 import Scroller from '../src/scroller';
 import Debugger from './Debugger';
-const rootScroller = new Scroller();
+const rootScroller = new Scroller({
+  scrollSizeOvserver: {
+    interval: 500,
+  }
+});
 new Debugger(rootScroller);
 
 const anchors = Array.from(document.querySelectorAll('.anchor-test'));

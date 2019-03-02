@@ -107,8 +107,8 @@ scroller.on(<span class="hljs-string">'scrollEnd'</span>, e =&gt; {
 
   <span class="hljs-attr">computed</span>: {
     <span class="hljs-attr">scrollTop</span>: {
-      get() { <span class="hljs-keyword">return</span> <span class="hljs-keyword">this</span>.innerScrollTop },
-      set(scrollTop) {
+      <span class="hljs-keyword">get</span>() { <span class="hljs-keyword">return</span> <span class="hljs-keyword">this</span>.innerScrollTop },
+      <span class="hljs-keyword">set</span>(scrollTop) {
         <span class="hljs-keyword">this</span>.innerScrollTop = scrollTop;
         <span class="hljs-comment">// &gt;&gt;&gt; some actions...</span>
       },

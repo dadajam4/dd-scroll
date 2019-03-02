@@ -1,5 +1,6 @@
 import './polyfills';
 import DDEvent from 'dd-event';
+import visibilityManager, { VisibilityStateListener } from 'dd-visibility';
 import {
   HAS_WINDOW,
   isDocumentElement,
@@ -70,6 +71,12 @@ export type ScrollDirection = ScrollYDirection | ScrollXDirection;
  */
 export type ScrollAxis = 'x' | 'y';
 
+export interface ScrollSizeOvserverSetting {
+  interval: number;
+  width: boolean;
+  height: boolean;
+}
+
 /**
  * Scrollerの基本セッティングです。
  * 個々のフィールドの詳細は[[Scroller]]の同名プロパティを参照してください。
@@ -78,6 +85,7 @@ export interface ScrollerSetting {
   el: Element | string;
   scrollingJudgeInterval: number;
   baseAxis: ScrollAxis;
+  scrollSizeOvserver: Partial<ScrollSizeOvserverSetting>;
 }
 
 /**
@@ -346,6 +354,8 @@ class Scroller extends DDEvent<ScrollerEventMap> {
     ...scrollToElementSettingsDefaults,
   };
 
+  scrollSizeOvserver?: ScrollSizeOvserverSetting;
+
   /**
    * 設定されたElement要素です。
    * 初期化が完了していない時には本getterはundefinedを返却する事に注意してください。
@@ -588,6 +598,9 @@ class Scroller extends DDEvent<ScrollerEventMap> {
   private _scrollToResult: ScrollResult | null = null;
   private _observers: ScrollerObserver[] = [];
   private _scrollStoppers: ScrollStopper[] = [];
+  private _scrollSizeOvserverPollingId: number | null = null;
+  private _scrollSizeOvserverSuspended: boolean = false;
+  private _visibilityListener: VisibilityStateListener;
 
   /**
    * Scrollerインスタンスを作成します。
@@ -617,10 +630,36 @@ class Scroller extends DDEvent<ScrollerEventMap> {
     if (convertedSetting.baseAxis) this.baseAxis = convertedSetting.baseAxis;
     this._lastAxis = this.baseAxis;
 
+    const { scrollSizeOvserver } = convertedSetting;
+    if (scrollSizeOvserver) {
+      this.scrollSizeOvserver = {
+        interval: 500,
+        width: true,
+        height: true,
+        ...scrollSizeOvserver,
+      }
+    }
+
+    this._visibilityListener = () => {
+      if (visibilityManager.isVisible) {
+        this.update();
+        if (this._scrollSizeOvserverSuspended) {
+          this._scrollSizeOvserverSuspended = false;
+          this._startScrollSizeOvserver();
+        }
+      } else {
+        this._scrollSizeOvserverSuspended = this._scrollSizeOvserverPollingId !== null;
+        this._stopScrollSizeOvserver();
+      }
+    }
+
     this._lastDirection = this._lastAxis === 'y' ? 'top' : 'left';
 
     // for SSR
     if (!HAS_WINDOW) return;
+
+    // Add Visibility Listener
+    visibilityManager.change(this._visibilityListener);
 
     // Skip auto setup when missing scrolling element.
     this.setElement(convertedSetting.el);
@@ -704,6 +743,7 @@ class Scroller extends DDEvent<ScrollerEventMap> {
     this._scrollStoppers = [];
     this._scrollEnable();
     this._observers = [];
+    visibilityManager.remove(this._visibilityListener);
 
     delete this._el;
     delete this._eventTarget;
@@ -711,6 +751,7 @@ class Scroller extends DDEvent<ScrollerEventMap> {
     delete this._resizeListener;
     delete this._resizeObserver;
     delete this._scrollToResult;
+    delete this._visibilityListener;
 
     this._setState(ScrollerState.Destroyed);
     this.offAll();
@@ -1048,6 +1089,30 @@ class Scroller extends DDEvent<ScrollerEventMap> {
     }
   }
 
+  private _startScrollSizeOvserver() {
+    if (!HAS_WINDOW) return;
+
+    this._stopScrollSizeOvserver();
+
+    if (this.scrollSizeOvserver) {
+      this._scrollSizeOvserverPollingId = window.setInterval(() => {
+        if (!this.scrollSizeOvserver || this.isDestroyed) {
+          this._stopScrollSizeOvserver();
+          return;
+        }
+
+        this._updateScrollSize();
+      }, this.scrollSizeOvserver.interval);
+    }
+  }
+
+  private _stopScrollSizeOvserver() {
+    if (this._scrollSizeOvserverPollingId !== null) {
+      clearInterval(this._scrollSizeOvserverPollingId);
+      this._scrollSizeOvserverPollingId = null;
+    }
+  }
+
   private _updateScrollPositions(): void {
     this._scrollTop = this.el.scrollTop;
     this._scrollLeft = this.el.scrollLeft;
@@ -1087,6 +1152,13 @@ class Scroller extends DDEvent<ScrollerEventMap> {
         }
       });
       this._resizeObserver.observe(this._el);
+    }
+
+    if (visibilityManager.isVisible) {
+      this._scrollSizeOvserverSuspended = false;
+      this._startScrollSizeOvserver();
+    } else {
+      this._scrollSizeOvserverSuspended = true;
     }
   }
 
@@ -1247,6 +1319,7 @@ class Scroller extends DDEvent<ScrollerEventMap> {
 
     // judge scroll start
     if (!this._nowScrolling) {
+      this._updateScrollSize();
       this._triggerScrollTick('scrollStart');
     }
 
