@@ -1,6 +1,6 @@
 {
   "name": "dd-scroller",
-  "version": "0.3.0",
+  "version": "0.3.1",
   "description": "Service for DOM Element Scroll.",
   "main": "dist/dd-scroller.umd.js",
   "module": "dist/dd-scroller.esm.js",
