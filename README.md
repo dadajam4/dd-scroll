@@ -1,4 +1,5 @@
 # dd-scroller
+___This package has been moved to: [https://www.npmjs.com/package/@dadajam4/scroller](https://www.npmjs.com/package/@dadajam4/scroller)___
 
 本モジュールは大きく2つの機能を提供します。
 

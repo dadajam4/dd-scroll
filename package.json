@@ -1,6 +1,6 @@
 {
   "name": "dd-scroller",
-  "version": "0.3.1",
+  "version": "0.3.2",
   "description": "Service for DOM Element Scroll.",
   "main": "dist/dd-scroller.umd.js",
   "module": "dist/dd-scroller.esm.js",
@@ -13,6 +13,7 @@
   ],
   "scripts": {
     "prepublish": "npm run build && npm run docs && npm run build:playground",
+    "postinstall": "node postinstall.js",
     "start": "npm run dev",
     "dev": "webpack-dev-server",
     "build:playground": "webpack",
